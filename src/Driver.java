@@ -6,9 +6,11 @@ public class Driver {
     long backoffDelay = 5000;
 
     public void execute() throws InterruptedException {
+        // Get session
         if (poolPermits.tryAcquire(1, TimeUnit.MILLISECONDS)) {
             System.out.printf("%s acquired permit from semaphore.%n", getThreadName());
 
+            //Lets say we execute a query and get a retryable exception, we need to backoff now:
             synchronized (this) {
                 System.out.printf("%s entering synchronized block.%n", getThreadName());
 
@@ -18,10 +20,14 @@ public class Driver {
                 }
                 System.out.printf("%s finished waiting. Exiting out of synchronized block.%n", getThreadName());
             }
+
+            // Execute was successful and now release session.
             poolPermits.release();
             System.out.printf("%s Released permit to semaphore.%n", getThreadName());
 
         } else {
+
+            // We weren't able to retrieve a session.
             System.out.printf("%s did not acquire permit from semaphore.%n", getThreadName());
         }
     }
